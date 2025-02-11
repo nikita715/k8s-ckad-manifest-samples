@@ -1,0 +1,21 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: dice
+spec:
+  jobTemplate:
+    metadata:
+      name: dice
+    spec:
+      activeDeadlineSeconds: 20
+      completions: 1
+      parallelism: 1
+      backoffLimit: 25
+      template:
+        spec:
+          containers:
+          - image: busybox
+            name: dice
+            resources: {}
+          restartPolicy: OnFailure
+  schedule: '*/1 * * * *'

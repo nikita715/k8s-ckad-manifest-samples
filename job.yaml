@@ -1,0 +1,17 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: sample-job
+spec:
+  completions: 6
+  parallelism: 3
+  activeDeadlineSeconds: 10
+  backoffLimit: 10
+  template:
+    spec:
+      containers:
+      - image: busybox
+        name: sample-job
+        command:
+        - ls
+      restartPolicy: Never

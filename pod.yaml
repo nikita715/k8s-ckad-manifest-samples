@@ -1,0 +1,102 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: sample-pod
+  namespace: sample-ns
+  labels:
+    app: sample-app
+  annotations:
+    description: "Sample pod"
+spec:
+  volumes:
+  - name: empty-dir
+    emptyDir: {}
+  - name: host-path
+    hostPath:
+      path: /etc/data
+      type: Directory
+  - name: configmap
+    configMap:
+      name: sample-cm
+  - name: secret
+    secret:
+      secretName: sample-secret
+  - name: pvc
+    persistentVolumeClaim:
+      claimName: sample-pvc
+  initContainers:
+  - name: sample-init-container
+    image: busybox
+    command: ["sh", "-c", "until ls /var/www/nginx; do echo 'Waiting for PVC'; sleep 2; done"]
+    volumeMounts:
+    - mountPath: /var/www/nginx
+      name: sample-pvc
+  containers:
+  - name: logger
+    image: nginx:alpine
+    command: ["sh", "-c", "while true; do date; sleep $TIME_FREQ; done > /opt/time/time-check.log"]
+    envFrom:
+    - configMapRef:
+        name: sample-cm
+    - secretRef:
+        name: sample-secret
+    env:
+    - name: APP_NAME
+      value: "logger"
+    - name: ENV_VAR_FROM_SECRET
+      valueFrom:
+        secretKeyRef:
+          name: sample-secret
+          key: secretKey
+    - name: TIME_FREQ
+      valueFrom:
+        configMapKeyRef:
+          name: sample-cm
+          key: TIME_FREQ
+    volumeMounts:
+    - mountPath: /opt/temp
+      name: empty-dir
+    - mountPath: /mnt/host
+      name: host-path
+    - mountPath: /etc/config
+      name: configmap
+    - mountPath: /etc/secret-volume
+      name: secret
+      readOnly: true
+    - mountPath: /var/www/nginx
+      name: pvc
+    securityContext:
+      runAsUser: 1000
+      allowPrivilegeEscalation: false
+    readinessProbe:
+      httpGet:
+        path: /
+        port: 80
+      initialDelaySeconds: 5
+      periodSeconds: 10
+    livenessProbe:
+      exec:
+        command: ["cat", "/opt/time/time-check.log"]
+      initialDelaySeconds: 10
+      periodSeconds: 30
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+      limits:
+        cpu: 200m
+        memory: 256Mi
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: node-type
+            operator: In
+            values:
+            - local
+  nodeSelector:
+    kubernetes.io/hostname: worker-node-1
+  restartPolicy: Always
+  terminationGracePeriodSeconds: 30
+  dnsPolicy: ClusterFirst
