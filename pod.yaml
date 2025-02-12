@@ -68,6 +68,11 @@ spec:
     securityContext:
       runAsUser: 1000
       allowPrivilegeEscalation: false
+      capabilities:
+        add:
+        - NET_ADMIN
+        drop:
+        - SYS_TIME
     readinessProbe:
       httpGet:
         path: /
