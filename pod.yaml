@@ -28,6 +28,7 @@ spec:
   - name: sample-init-container
     image: busybox
     command: ["sh", "-c", "until ls /var/www/nginx; do echo 'Waiting for PVC'; sleep 2; done"]
+    restartPolicy: Always
     volumeMounts:
     - mountPath: /var/www/nginx
       name: sample-pvc
@@ -103,5 +104,3 @@ spec:
   nodeSelector:
     kubernetes.io/hostname: worker-node-1
   restartPolicy: Always
-  terminationGracePeriodSeconds: 30
-  dnsPolicy: ClusterFirst
